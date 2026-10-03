@@ -1,0 +1,7 @@
+{
+  "name": "Inverter Pool — Neighbourhood Virtual Power Plant Simulator",
+  "description": "A neighbourhood-scale virtual power plant prototype coordinating home and shop inverter batteries for grid reliability and peak shaving.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
