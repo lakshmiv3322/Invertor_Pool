@@ -49,6 +49,44 @@ export default function App() {
     setIsCustomSim(false);
   };
 
+  // Live node controllable toggle
+  const handleToggleNodeControllable = (nodeId: string) => {
+    setSimulationData((prev) => {
+      const updatedNodes = prev.nodes.map((node) => {
+        if (node.id === nodeId && node.has_inverter) {
+          return {
+            ...node,
+            is_controllable: !node.is_controllable,
+          };
+        }
+        return node;
+      });
+
+      const controllableInverters = updatedNodes.filter((n) => n.is_controllable).length;
+      const totalInverters = updatedNodes.filter((n) => n.has_inverter).length;
+      const controllableBatteryKwh = +updatedNodes
+        .filter((n) => n.is_controllable)
+        .reduce((acc, n) => acc + n.battery_capacity_kwh, 0)
+        .toFixed(1);
+      const aggregateShiftableKw = +updatedNodes
+        .filter((n) => n.is_controllable)
+        .reduce((acc, n) => acc + n.flexible_load_base_kw, 0)
+        .toFixed(1);
+
+      return {
+        ...prev,
+        nodes: updatedNodes,
+        feeder_summary: {
+          ...prev.feeder_summary,
+          controllable_inverters: controllableInverters,
+          controllable_share_pct: totalInverters > 0 ? Math.round((controllableInverters / totalInverters) * 100) : 0,
+          controllable_battery_kwh: controllableBatteryKwh,
+          aggregate_shiftable_load_kw: aggregateShiftableKw,
+        },
+      };
+    });
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500/30 selection:text-amber-200">
       {/* 3-Zone Top Navigation */}
@@ -80,7 +118,10 @@ export default function App() {
         )}
 
         {currentTab === 'operator' && (
-          <OperatorView data={simulationData} />
+          <OperatorView
+            data={simulationData}
+            onToggleNodeControllable={handleToggleNodeControllable}
+          />
         )}
 
         {currentTab === 'discom' && (

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { FeederNode, MasterSimulationData } from '../types';
+import { MasterSimulationData } from '../types';
 import {
-  Users,
   Cpu,
   Zap,
   Shield,
@@ -9,9 +8,6 @@ import {
   CheckCircle2,
   AlertTriangle,
   RotateCw,
-  Sliders,
-  Filter,
-  ArrowUpDown,
   Play,
 } from 'lucide-react';
 
@@ -339,15 +335,18 @@ export const OperatorView: React.FC<OperatorViewProps> = ({
                     {/* Controllable Pool Toggle/Badge */}
                     <td className="py-2.5 px-3">
                       {node.has_inverter ? (
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${
+                        <button
+                          type="button"
+                          onClick={() => onToggleNodeControllable?.(node.id)}
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded text-[11px] font-semibold border transition-all cursor-pointer hover:opacity-90 ${
                             isControllable
-                              ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
-                              : 'bg-slate-800 border-slate-700 text-slate-400'
+                              ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 hover:bg-amber-500/25'
+                              : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
                           }`}
+                          title="Click to toggle Inverter Pool enrollment for this node"
                         >
-                          {isControllable ? 'Active Pool' : 'Uncontrolled'}
-                        </span>
+                          {isControllable ? '⚡ Active Pool' : 'Uncontrolled'}
+                        </button>
                       ) : (
                         <span className="text-slate-500">N/A</span>
                       )}

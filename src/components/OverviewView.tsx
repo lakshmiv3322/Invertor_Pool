@@ -3,7 +3,7 @@ import { MasterSimulationData, ScenarioMode } from '../types';
 import { MetricCard } from './MetricCard';
 import { FeederLoadChart } from './FeederLoadChart';
 import { OutageBarChart } from './OutageBarChart';
-import { Zap, ShieldCheck, BatteryCharging, Network, Clock, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, BatteryCharging, Network, Clock, CheckCircle2 } from 'lucide-react';
 
 interface OverviewViewProps {
   data: MasterSimulationData;

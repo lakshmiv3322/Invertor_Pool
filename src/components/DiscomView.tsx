@@ -2,14 +2,7 @@ import React, { useState } from 'react';
 import { MasterSimulationData, DRSignalType } from '../types';
 import {
   Activity,
-  TrendingDown,
-  Zap,
-  Flame,
-  ShieldCheck,
   Building,
-  CheckCircle,
-  Clock,
-  ArrowRight,
   Leaf,
   DollarSign,
 } from 'lucide-react';

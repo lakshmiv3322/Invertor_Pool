@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { OutageScenario, SimulationConfig } from '../types';
-import { X, RotateCcw, Play, Sliders, Check } from 'lucide-react';
+import { X, RotateCcw, Play, Sliders } from 'lucide-react';
 
 interface ScenarioDrawerProps {
   isOpen: boolean;

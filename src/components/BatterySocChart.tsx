@@ -61,7 +61,7 @@ export const BatterySocChart: React.FC<BatterySocChartProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
         <div>
           <h4 className="text-sm font-semibold text-white flex items-center gap-2">
-            <span>Battery State of Charge (SoC) — 24h Profile</span>
+            <span>Battery State of Charge (SoC) — {nodeName}</span>
             <span className="text-[11px] text-slate-400 font-mono">
               ({batteryCapacityKwh} kWh Bank)
             </span>

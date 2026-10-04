@@ -4,14 +4,9 @@ import { BatterySocChart } from './BatterySocChart';
 import {
   Home,
   Store,
-  Battery,
-  Zap,
   ShieldCheck,
-  Power,
   RotateCcw,
   Sparkles,
-  Info,
-  Sliders,
   Check,
 } from 'lucide-react';
 
@@ -23,11 +18,8 @@ interface HouseholdViewProps {
 
 export const HouseholdView: React.FC<HouseholdViewProps> = ({
   data,
-  scenarioMode,
-  onToggleScenario,
 }) => {
   const [selectedNodeId, setSelectedNodeId] = useState<string>('HH-001');
-  const [searchFilter, setSearchFilter] = useState('');
 
   // Find selected node
   const selectedNode = data.nodes.find((n) => n.id === selectedNodeId) || data.nodes[0];
