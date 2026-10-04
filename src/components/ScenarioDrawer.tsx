@@ -33,9 +33,9 @@ export const ScenarioDrawer: React.FC<ScenarioDrawerProps> = ({
     setTempConfig({
       n_households: 200,
       n_shops: 20,
-      controllable_share: 0.50,
+      controllable_share: 0.70,
       outage_scenario: 'medium',
-      inverter_penetration: 0.85,
+      inverter_penetration: 0.60,
       battery_capacity_ah: 150,
     });
     onClose();
@@ -77,7 +77,7 @@ export const ScenarioDrawer: React.FC<ScenarioDrawerProps> = ({
                       : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200'
                   }`}
                 >
-                  {sc} {sc === 'low' ? '(3/mo)' : sc === 'medium' ? '(7/mo)' : '(14/mo)'}
+                  {sc} {sc === 'low' ? '(Low Stress)' : sc === 'medium' ? '(Base Scenario)' : '(High Stress)'}
                 </button>
               ))}
             </div>
@@ -99,53 +99,59 @@ export const ScenarioDrawer: React.FC<ScenarioDrawerProps> = ({
             <input
               type="range"
               min="0.10"
-              max="1.00"
+              max="1.0"
               step="0.05"
               value={tempConfig.controllable_share}
               onChange={(e) =>
-                setTempConfig({
-                  ...tempConfig,
-                  controllable_share: parseFloat(e.target.value),
-                })
+                setTempConfig({ ...tempConfig, controllable_share: parseFloat(e.target.value) })
               }
-              className="w-full accent-amber-500 bg-slate-950 cursor-pointer"
+              className="w-full accent-amber-500 cursor-pointer"
             />
-            <p className="text-[11px] text-slate-500">
-              Percentage of inverter-owning homes that have smart plug coordination enabled.
-            </p>
+            <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+              <span>10% (Low pool)</span>
+              <span>70% (Base benchmark)</span>
+              <span>100% (Full feeder fleet)</span>
+            </div>
           </div>
 
           {/* Inverter Penetration */}
           <div className="space-y-1.5">
             <div className="flex justify-between items-center">
               <label className="font-semibold text-slate-300">
-                Neighbourhood Inverter Battery Adoption
+                Inverter Adoption Rate (Penetration)
               </label>
-              <span className="font-mono text-slate-300 font-bold">
+              <span className="font-mono text-amber-400 font-bold">
                 {Math.round(tempConfig.inverter_penetration * 100)}%
               </span>
             </div>
             <input
               type="range"
-              min="0.40"
-              max="1.00"
+              min="0.30"
+              max="0.95"
               step="0.05"
               value={tempConfig.inverter_penetration}
               onChange={(e) =>
-                setTempConfig({
-                  ...tempConfig,
-                  inverter_penetration: parseFloat(e.target.value),
-                })
+                setTempConfig({ ...tempConfig, inverter_penetration: parseFloat(e.target.value) })
               }
-              className="w-full accent-slate-400 bg-slate-950 cursor-pointer"
+              className="w-full accent-amber-500 cursor-pointer"
             />
+            <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+              <span>30% Adoption</span>
+              <span>60% (Base benchmark)</span>
+              <span>95% Ubiquitous</span>
+            </div>
           </div>
 
           {/* Battery Capacity */}
           <div className="space-y-1.5">
-            <label className="font-semibold text-slate-300">
-              Base Inverter Battery Capacity (Ah)
-            </label>
+            <div className="flex justify-between items-center">
+              <label className="font-semibold text-slate-300">
+                Typical Inverter Battery Capacity
+              </label>
+              <span className="font-mono text-amber-400 font-bold">
+                {tempConfig.battery_capacity_ah} Ah ({(tempConfig.battery_capacity_ah * 12 / 1000).toFixed(2)} kWh)
+              </span>
+            </div>
             <div className="grid grid-cols-3 gap-2">
               {[100, 150, 200].map((ah) => (
                 <button
@@ -165,29 +171,37 @@ export const ScenarioDrawer: React.FC<ScenarioDrawerProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center justify-between pt-3 border-t border-slate-800 gap-3">
+        {/* Footer Actions */}
+        <div className="flex items-center justify-between border-t border-slate-800 pt-4">
           <button
+            type="button"
             onClick={handleReset}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+            disabled={!isCustomSim}
+            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg transition-colors ${
+              isCustomSim
+                ? 'text-slate-400 hover:text-white bg-slate-800'
+                : 'text-slate-600 bg-slate-900 cursor-not-allowed'
+            }`}
           >
             <RotateCcw className="h-3.5 w-3.5" />
-            <span>Reset to Python Benchmark</span>
+            <span>Reset Benchmark</span>
           </button>
 
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={onClose}
-              className="px-3 py-2 text-xs font-medium text-slate-400 hover:text-white rounded-lg transition-colors"
+              className="px-3.5 py-2 text-xs font-medium text-slate-400 hover:text-slate-200"
             >
               Cancel
             </button>
             <button
+              type="button"
               onClick={handleApply}
-              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 rounded-lg shadow-md shadow-amber-400/20 transition-all"
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-md transition-colors"
             >
-              <Play className="h-3.5 w-3.5" />
-              <span>Simulate Feeder (8,760h)</span>
+              <Play className="h-3.5 w-3.5 fill-current" />
+              <span>Recalculate Model</span>
             </button>
           </div>
         </div>

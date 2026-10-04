@@ -8,6 +8,8 @@ import { MasterSimulationData, ScenarioMode, SimulationConfig, ViewTab } from '.
 import { getPrecomputedData, runClientSimulation } from './engine/simulation';
 import { Header } from './components/Header';
 import { OverviewView } from './components/OverviewView';
+import { SensitivityView } from './components/SensitivityView';
+import { AblationView } from './components/AblationView';
 import { HouseholdView } from './components/HouseholdView';
 import { OperatorView } from './components/OperatorView';
 import { DiscomView } from './components/DiscomView';
@@ -23,13 +25,13 @@ export default function App() {
   const [config, setConfig] = useState<SimulationConfig>({
     n_households: 200,
     n_shops: 20,
-    controllable_share: 0.50,
+    controllable_share: 0.70,
     outage_scenario: 'medium',
-    inverter_penetration: 0.85,
+    inverter_penetration: 0.60,
     battery_capacity_ah: 150,
   });
 
-  // Master simulation dataset (static precomputed from Python by default or live calculated)
+  // Master simulation dataset (derived from results_base.json)
   const [simulationData, setSimulationData] = useState<MasterSimulationData>(() =>
     getPrecomputedData()
   );
@@ -109,6 +111,14 @@ export default function App() {
           />
         )}
 
+        {currentTab === 'sensitivity' && (
+          <SensitivityView />
+        )}
+
+        {currentTab === 'ablation' && (
+          <AblationView />
+        )}
+
         {currentTab === 'household' && (
           <HouseholdView
             data={simulationData}
@@ -141,7 +151,7 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-3 text-slate-400">
-            <span>Synthetic 8,760-Hour Simulation</span>
+            <span>Synthetic 8,760-Hour Simulation (20 Monte Carlo Seeds)</span>
             <span aria-hidden="true">·</span>
             <button
               onClick={() => setIsScenarioModalOpen(true)}
@@ -153,7 +163,7 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Interactive Scenario Configuration Drawer */}
+      {/* Slide-out Scenario Config Drawer */}
       <ScenarioDrawer
         isOpen={isScenarioModalOpen}
         onClose={() => setIsScenarioModalOpen(false)}

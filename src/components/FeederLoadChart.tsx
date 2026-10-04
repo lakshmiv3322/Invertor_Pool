@@ -19,10 +19,13 @@ export const FeederLoadChart: React.FC<FeederLoadChartProps> = ({
   const [hoveredHour, setHoveredHour] = useState<number | null>(null);
   const [showChargingOverlay, setShowChargingOverlay] = useState(false);
 
+  // Transformer Capacity Limit C0 = 134.57 kW
+  const transformerCapacityKw = 134.57;
+
   // Determine max Y scale
-  const allValues = [...baselineLoads, ...poolLoads];
-  const maxVal = Math.max(...allValues, 600);
-  const yMax = Math.ceil(maxVal / 100) * 100;
+  const allValues = [...baselineLoads, ...poolLoads, transformerCapacityKw];
+  const maxVal = Math.max(...allValues, 140);
+  const yMax = Math.ceil(maxVal / 20) * 20;
 
   // Chart coordinates
   const width = 760;
@@ -62,7 +65,7 @@ export const FeederLoadChart: React.FC<FeederLoadChartProps> = ({
   const baselineArea = makeAreaPath(baselineLoads);
   const poolArea = makeAreaPath(poolLoads);
 
-  // Y-axis ticks (4 ticks)
+  // Y-axis ticks (5 ticks)
   const yTicks = [0, yMax * 0.25, yMax * 0.5, yMax * 0.75, yMax];
 
   const formatHour = (h: number) => {
@@ -76,16 +79,16 @@ export const FeederLoadChart: React.FC<FeederLoadChartProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
           <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-            <span>24-Hour Aggregated Feeder Load Profile (Annual Average)</span>
+            <span>24-Hour Aggregated Feeder Load Profile</span>
             <span className="text-[11px] text-slate-400 font-normal">· Hourly kW</span>
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            Compares uncoordinated grid demand against Inverter Pool load shifting & peak shaving.
+            Compares uncoordinated grid demand against Inverter Pool load shifting & peak shaving against transformer rating.
           </p>
         </div>
 
         {/* Legend & Toggles */}
-        <div className="flex items-center gap-4 text-xs">
+        <div className="flex flex-wrap items-center gap-3 text-xs">
           <div className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-slate-400 border border-slate-300"></span>
             <span className="text-slate-300 font-medium">Baseline</span>
@@ -94,6 +97,11 @@ export const FeederLoadChart: React.FC<FeederLoadChartProps> = ({
           <div className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50"></span>
             <span className="text-amber-400 font-bold">Inverter Pool</span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="h-0.5 w-3 bg-rose-500 border-b border-dashed border-rose-400"></span>
+            <span className="text-rose-400 font-semibold text-[11px]">C0 (134.6 kW)</span>
           </div>
 
           <button
@@ -119,73 +127,65 @@ export const FeederLoadChart: React.FC<FeederLoadChartProps> = ({
           <defs>
             {/* Gradients */}
             <linearGradient id="baselineGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#94a3b8" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#94a3b8" stopOpacity="0.01" />
+              <stop offset="0%" stopColor="#94a3b8" stopOpacity={currentMode === 'baseline' ? '0.35' : '0.08'} />
+              <stop offset="100%" stopColor="#94a3b8" stopOpacity="0.0" />
             </linearGradient>
 
             <linearGradient id="poolGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.30" />
-              <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.02" />
+              <stop offset="0%" stopColor="#f59e0b" stopOpacity={currentMode === 'pool' ? '0.45' : '0.12'} />
+              <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0" />
+            </linearGradient>
+
+            {/* Shaded Evening Peak Stress Window 18:00 - 22:00 */}
+            <linearGradient id="stressGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#ef4444" stopOpacity="0.18" />
+              <stop offset="100%" stopColor="#ef4444" stopOpacity="0.03" />
+            </linearGradient>
+
+            {/* Shaded Solar Window 10:00 - 15:00 */}
+            <linearGradient id="solarGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#10b981" stopOpacity="0.12" />
+              <stop offset="100%" stopColor="#10b981" stopOpacity="0.02" />
             </linearGradient>
           </defs>
 
-          {/* Off-Peak Solar & Dawn Charging Windows (Background Highlights) */}
-          {/* Dawn: 01:00 - 05:00 */}
+          {/* Shaded Solar Charging Window (10:00 - 15:00) */}
           <rect
-            x={getX(1)}
+            x={getX(10)}
             y={padTop}
-            width={getX(5) - getX(1)}
+            width={getX(15) - getX(10)}
             height={chartHeight}
-            fill="#10b981"
-            fillOpacity="0.06"
+            fill="url(#solarGrad)"
+            rx="4"
           />
-          {/* Solar Surplus: 11:00 - 15:00 */}
-          <rect
-            x={getX(11)}
-            y={padTop}
-            width={getX(15) - getX(11)}
-            height={chartHeight}
-            fill="#10b981"
-            fillOpacity="0.06"
-          />
+          <text
+            x={(getX(10) + getX(15)) / 2}
+            y={padTop + 14}
+            textAnchor="middle"
+            className="text-[9px] fill-emerald-400 font-bold uppercase tracking-wider"
+          >
+            Solar Pre-Charge Window
+          </text>
 
-          {/* Evening Grid Stress Window (18:00 - 22:00) */}
+          {/* Shaded Evening Peak Stress Window (18:00 - 22:00) */}
           <rect
             x={getX(18)}
             y={padTop}
             width={getX(22) - getX(18)}
             height={chartHeight}
-            fill="#ef4444"
-            fillOpacity="0.08"
+            fill="url(#stressGrad)"
+            rx="4"
           />
-
-          {/* Zone Labels */}
           <text
-            x={getX(3)}
-            y={padTop - 8}
+            x={(getX(18) + getX(22)) / 2}
+            y={padTop + 14}
             textAnchor="middle"
-            className="text-[10px] fill-emerald-400/80 font-medium"
+            className="text-[9px] fill-rose-400 font-bold uppercase tracking-wider"
           >
-            Dawn Off-Peak
-          </text>
-          <text
-            x={getX(13)}
-            y={padTop - 8}
-            textAnchor="middle"
-            className="text-[10px] fill-emerald-400/80 font-medium"
-          >
-            Solar Window
-          </text>
-          <text
-            x={getX(20)}
-            y={padTop - 8}
-            textAnchor="middle"
-            className="text-[10px] fill-rose-400 font-semibold"
-          >
-            Evening Peak Stress (18-22h)
+            Evening Peak Window
           </text>
 
-          {/* Y Grid Lines & Labels */}
+          {/* Y Axis Grid Lines & Labels */}
           {yTicks.map((tickVal) => {
             const y = getY(tickVal);
             return (
@@ -193,7 +193,7 @@ export const FeederLoadChart: React.FC<FeederLoadChartProps> = ({
                 <line
                   x1={padLeft}
                   y1={y}
-                  x2={width - padRight}
+                  x2={padLeft + chartWidth}
                   y2={y}
                   stroke="#334155"
                   strokeWidth="1"
@@ -211,6 +211,35 @@ export const FeederLoadChart: React.FC<FeederLoadChartProps> = ({
               </g>
             );
           })}
+
+          {/* Transformer Capacity Line */}
+          {(() => {
+            const yC0 = getY(transformerCapacityKw);
+            return (
+              <g>
+                <line
+                  x1={padLeft}
+                  y1={yC0}
+                  x2={padLeft + chartWidth}
+                  y2={yC0}
+                  stroke="#f43f5e"
+                  strokeWidth="1.5"
+                  strokeDasharray="4 4"
+                />
+                <text
+                  x={padLeft + chartWidth - 6}
+                  y={yC0 - 6}
+                  textAnchor="end"
+                  fill="#fb7185"
+                  fontSize="9"
+                  fontFamily="monospace"
+                  fontWeight="bold"
+                >
+                  C0 Limit: {transformerCapacityKw.toFixed(1)} kW
+                </text>
+              </g>
+            );
+          })()}
 
           {/* X Axis Ticks & Labels */}
           {Array.from({ length: 24 }).map((_, h) => {
@@ -389,13 +418,13 @@ export const FeederLoadChart: React.FC<FeederLoadChartProps> = ({
         <div className="flex items-center gap-2">
           <span className="inline-block h-2 w-2 rounded-full bg-emerald-400"></span>
           <span>
-            <strong className="text-slate-200">Valley Filling:</strong> +68 kW shifted into 01:00-05:00 & 11:00-15:00 surplus windows.
+            <strong className="text-slate-200">Off-Peak Pre-Charging:</strong> +10:00–15:00 solar window utilized at zero marginal stress.
           </span>
         </div>
         <div className="flex items-center gap-2">
           <span className="inline-block h-2 w-2 rounded-full bg-amber-400"></span>
           <span>
-            <strong className="text-slate-200">Peak Shaving:</strong> -73 kW shaved during 18:00–22:00 critical stress window.
+            <strong className="text-slate-200">Peak Shaving:</strong> Shaves evening surge, keeping load below {transformerCapacityKw.toFixed(1)} kW transformer rating.
           </span>
         </div>
       </div>

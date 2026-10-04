@@ -22,9 +22,13 @@ export const DiscomView: React.FC<DiscomViewProps> = ({ data }) => {
 
   // Calculate environmental & financial impact
   // Commercial diesel genset displacement: 1 kWh unserved avoided ≈ 0.35 L diesel fuel
-  const dieselLitresSaved = Math.round((baseMetrics.unserved_energy_kWh_year - metrics.unserved_energy_kWh_year) * 0.35);
+  const unservedAvoidedKwh = Math.max(0, baseMetrics.unserved_energy_kWh_year - metrics.unserved_energy_kWh_year);
+  const dieselLitresSaved = Math.round(unservedAvoidedKwh * 0.35);
   const co2AvoidedKg = Math.round(dieselLitresSaved * 2.68); // 2.68 kg CO2 / L diesel
-  const peakCostSavingsINR = Math.round((baseMetrics.evening_feeder_peak_kW - metrics.evening_feeder_peak_kW) * 12 * 350); // Peak demand charge proxy
+  const peakReliefKw = +(baseMetrics.annual_max_kW && metrics.annual_max_kW 
+    ? (baseMetrics.annual_max_kW - metrics.annual_max_kW) 
+    : (baseMetrics.evening_feeder_peak_kW - metrics.evening_feeder_peak_kW)).toFixed(1);
+  const peakCostSavingsINR = Math.round(+peakReliefKw * 12 * 350); // Peak demand charge proxy
 
   // Helper for signal badge
   const getSignalBadge = (sig: DRSignalType) => {
@@ -105,7 +109,7 @@ export const DiscomView: React.FC<DiscomViewProps> = ({ data }) => {
                   -{improvements.delta_peak_pct}%
                 </span>
                 <span className="text-xs text-slate-300 font-mono">
-                  ({Math.round(baseMetrics.evening_feeder_peak_kW - metrics.evening_feeder_peak_kW)} kW shaved)
+                  ({peakReliefKw} kW shaved)
                 </span>
               </div>
             </div>
@@ -117,7 +121,7 @@ export const DiscomView: React.FC<DiscomViewProps> = ({ data }) => {
                   -{improvements.delta_unserved_pct}%
                 </span>
                 <span className="text-xs text-slate-300 font-mono">
-                  ({Math.round(baseMetrics.unserved_energy_kWh_year - metrics.unserved_energy_kWh_year).toLocaleString()} kWh/yr)
+                  ({Math.round(unservedAvoidedKwh).toLocaleString()} kWh/yr)
                 </span>
               </div>
             </div>
@@ -198,42 +202,26 @@ export const DiscomView: React.FC<DiscomViewProps> = ({ data }) => {
             />
             <text
               x={width - padRight - 4}
-              y={getYGap(0.35) + 12}
+              y={getYGap(0.35) - 4}
               textAnchor="end"
               className="text-[9px] fill-emerald-400 font-mono"
             >
-              0.35 Solar Pre-charge Threshold
+              0.35 Solar Surplus Window
             </text>
 
-            {/* Y Axis (0.0 to 1.0) */}
-            {[0.0, 0.25, 0.5, 0.75, 1.0].map((tick) => {
-              const y = getYGap(tick);
-              return (
-                <g key={tick}>
-                  <line
-                    x1={padLeft}
-                    y1={y}
-                    x2={width - padRight}
-                    y2={y}
-                    stroke="#334155"
-                    strokeWidth="1"
-                    strokeDasharray={tick === 0 ? '0' : '2 2'}
-                    opacity={0.4}
-                  />
-                  <text
-                    x={padLeft - 6}
-                    y={y + 3}
-                    textAnchor="end"
-                    className="text-[10px] fill-slate-400 font-mono tabular-nums"
-                  >
-                    {tick.toFixed(2)}
-                  </text>
-                </g>
-              );
-            })}
+            {/* Area Fill */}
+            <path d={makeGapArea(discom.gap_factor)} fill="url(#gapGrad)" />
 
-            {/* X Axis */}
-            {discom.hours.map((h) => {
+            {/* Gap Line */}
+            <path
+              d={makeGapLine(discom.gap_factor)}
+              fill="none"
+              stroke="#f59e0b"
+              strokeWidth="2.5"
+            />
+
+            {/* X-Axis Ticks & Labels */}
+            {Array.from({ length: 24 }).map((_, h) => {
               const x = getX(h);
               const isLabeled = h % 3 === 0;
               return (
@@ -244,7 +232,7 @@ export const DiscomView: React.FC<DiscomViewProps> = ({ data }) => {
                         x1={x}
                         y1={padTop + chartHeight}
                         x2={x}
-                        y2={padTop + chartHeight + 4}
+                        y2={padTop + chartHeight + 5}
                         stroke="#475569"
                         strokeWidth="1"
                       />
@@ -252,7 +240,7 @@ export const DiscomView: React.FC<DiscomViewProps> = ({ data }) => {
                         x={x}
                         y={padTop + chartHeight + 16}
                         textAnchor="middle"
-                        className="text-[9px] fill-slate-400 font-mono"
+                        className="text-[10px] fill-slate-400 font-mono"
                       >
                         {String(h).padStart(2, '0')}:00
                       </text>
@@ -262,121 +250,80 @@ export const DiscomView: React.FC<DiscomViewProps> = ({ data }) => {
               );
             })}
 
-            {/* Gap Area Fill & Line */}
-            <path d={makeGapArea(discom.gap_factor)} fill="url(#gapGrad)" />
-            <path
-              d={makeGapLine(discom.gap_factor)}
-              fill="none"
-              stroke="#f59e0b"
-              strokeWidth="2.5"
-            />
-
-            {/* Hover Indicator */}
+            {/* Interactive hover circle */}
             {hoveredHour !== null && (
-              <g>
-                <line
-                  x1={getX(hoveredHour)}
-                  y1={padTop}
-                  x2={getX(hoveredHour)}
-                  y2={padTop + chartHeight}
-                  stroke="#f59e0b"
-                  strokeWidth="1.2"
-                  strokeDasharray="2 2"
-                />
-                <circle
-                  cx={getX(hoveredHour)}
-                  cy={getYGap(discom.gap_factor[hoveredHour])}
-                  r="4.5"
-                  fill="#f59e0b"
-                  stroke="#0f172a"
-                  strokeWidth="2"
-                />
-              </g>
+              <circle
+                cx={getX(hoveredHour)}
+                cy={getYGap(discom.gap_factor[hoveredHour])}
+                r="5"
+                fill="#f59e0b"
+                stroke="#0f172a"
+                strokeWidth="2"
+              />
             )}
 
-            {/* Hitboxes */}
-            {discom.hours.map((h) => (
-              <rect
-                key={h}
-                x={getX(h) - chartWidth / 48}
-                y={padTop}
-                width={chartWidth / 24}
-                height={chartHeight}
-                fill="transparent"
-                className="cursor-pointer"
-                onMouseEnter={() => setHoveredHour(h)}
-              />
-            ))}
+            {/* Transparent Hitboxes */}
+            {Array.from({ length: 24 }).map((_, h) => {
+              const x = getX(h) - chartWidth / 48;
+              const w = chartWidth / 24;
+              return (
+                <rect
+                  key={h}
+                  x={x}
+                  y={padTop}
+                  width={w}
+                  height={chartHeight}
+                  fill="transparent"
+                  className="cursor-pointer"
+                  onMouseEnter={() => setHoveredHour(h)}
+                />
+              );
+            })}
           </svg>
-
-          {hoveredHour !== null && (
-            <div
-              className="absolute z-20 pointer-events-none rounded-md border border-slate-700 bg-slate-950/95 px-3 py-2 text-xs shadow-xl backdrop-blur"
-              style={{
-                left: `${Math.min(75, Math.max(20, (hoveredHour / 23) * 100))}%`,
-                top: '10px',
-                transform: 'translateX(-50%)',
-              }}
-            >
-              <div className="font-bold text-white mb-1 flex items-center justify-between gap-3">
-                <span>{String(hoveredHour).padStart(2, '0')}:00 Window</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${getSignalBadge(discom.dr_signals[hoveredHour]).bg}`}>
-                  {getSignalBadge(discom.dr_signals[hoveredHour]).label}
-                </span>
-              </div>
-              <div className="space-y-0.5 font-mono text-[11px] tabular-nums">
-                <div className="flex justify-between gap-4 text-slate-300">
-                  <span className="text-slate-400">Stress Gap Factor:</span>
-                  <span className="font-bold text-amber-400">{discom.gap_factor[hoveredHour]}</span>
-                </div>
-                <div className="flex justify-between gap-4 text-slate-300">
-                  <span className="text-slate-400">Shifted Load Delta:</span>
-                  <span className="font-semibold text-emerald-400">{discom.shiftable_delta_kW[hoveredHour]} kW</span>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* 24-Hour Demand-Response Hourly Signal Matrix */}
+      {/* Hourly Shiftable Load & Automated DR Signals Matrix */}
       <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-5 backdrop-blur">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div>
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <span>24-Hour Automated Demand-Response Signals (DR Matrix)</span>
-              <span className="text-[11px] text-slate-400 font-normal">· Hourly Automation Commands</span>
+              <Activity className="h-4 w-4 text-amber-400" />
+              <span>24-Hour Demand-Response (DR) Signal Matrix & Hourly Shift Delta</span>
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Direct telemetry dispatched to smart plugs across all enrolled inverters.
+              Autonomous dispatch rules dispatched to IoT smart plugs and controllable hybrid inverter gateways.
             </p>
           </div>
 
-          <div className="flex items-center gap-2 text-[11px]">
-            <span className="inline-flex items-center gap-1 text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-medium">
-              Encourage Charging
-            </span>
-            <span className="inline-flex items-center gap-1 text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20 font-medium">
-              Defer Charging / Support
-            </span>
+          <div className="flex items-center gap-3 text-xs">
+            <div className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-emerald-400"></span>
+              <span className="text-slate-300">Encourage Charging</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-rose-500"></span>
+              <span className="text-slate-300">Defer Charging</span>
+            </div>
           </div>
         </div>
 
-        {/* 24-Hour Grid Strip */}
+        {/* 24-Hour Signal Grid */}
         <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-2">
-          {discom.hours.map((h) => {
+          {Array.from({ length: 24 }).map((_, h) => {
             const sig = discom.dr_signals[h];
-            const badge = getSignalBadge(sig);
             const deltaKw = discom.shiftable_delta_kW[h];
+            const badge = getSignalBadge(sig);
+            const isHovered = hoveredHour === h;
 
             return (
               <div
                 key={h}
-                className={`p-2.5 rounded-lg border flex flex-col justify-between transition-all ${
-                  sig === 'defer_charging'
-                    ? 'border-rose-500/40 bg-rose-500/5 hover:bg-rose-500/10'
-                    : sig === 'encourage_charging'
-                    ? 'border-emerald-500/40 bg-emerald-500/5 hover:bg-emerald-500/10'
+                onMouseEnter={() => setHoveredHour(h)}
+                onMouseLeave={() => setHoveredHour(null)}
+                className={`rounded-lg p-2 border transition-all cursor-pointer ${
+                  isHovered
+                    ? 'border-amber-400 bg-slate-800 shadow-md scale-105 z-10'
                     : 'border-slate-800 bg-slate-950/60'
                 }`}
               >
@@ -429,7 +376,7 @@ export const DiscomView: React.FC<DiscomViewProps> = ({ data }) => {
             <span className="text-xs text-slate-400">Litres Diesel / Year</span>
           </div>
           <p className="mt-2 text-xs text-slate-300 leading-relaxed">
-            Eliminates noisy commercial diesel backup genset runtimes for the 20 connected shops, abating ~<strong className="text-emerald-400">{(co2AvoidedKg / 1000).toFixed(1)} metric tons of CO₂</strong> annually.
+            Eliminates noisy commercial diesel backup genset runtimes for connected shops, abating ~<strong className="text-emerald-400">{(co2AvoidedKg / 1000).toFixed(1)} metric tons of CO₂</strong> annually.
           </p>
         </div>
 
@@ -441,12 +388,12 @@ export const DiscomView: React.FC<DiscomViewProps> = ({ data }) => {
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-bold font-mono text-white">
-              -73.2 kW
+              -{peakReliefKw} kW
             </span>
             <span className="text-xs text-slate-400">Thermal Stress Relief</span>
           </div>
           <p className="mt-2 text-xs text-slate-300 leading-relaxed">
-            Prevents 400 kVA feeder distribution transformer overloading during hot summer evenings, extending transformer asset life and eliminating nuisance fuse blowouts.
+            Prevents {summary.transformer_capacity_kw ? `${summary.transformer_capacity_kw} kW (${summary.transformer_rating_kva} kVA)` : '160 kVA'} feeder distribution transformer overloading during peak hours, extending asset life and eliminating nuisance fuse blowouts.
           </p>
         </div>
 

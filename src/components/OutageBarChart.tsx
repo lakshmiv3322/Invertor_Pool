@@ -17,29 +17,29 @@ export const OutageBarChart: React.FC<OutageBarChartProps> = ({
   const cohorts = [
     {
       id: 'hh_avg',
-      label: 'Avg Household',
-      description: 'Annual critical outage hours per household',
-      baseline: baselineMetrics.critical_load_outage_hours_per_household_year,
-      pool: poolMetrics.critical_load_outage_hours_per_household_year,
+      label: 'All Households & Shops (Average)',
+      description: 'Annual critical outage hours per node across all 220 feeder connections',
+      baseline: baselineMetrics.critical_load_outage_hours_all_nodes_year,
+      pool: poolMetrics.critical_load_outage_hours_all_nodes_year,
     },
     {
       id: 'pool_participants',
-      label: 'Pool Members',
-      description: 'Households with active smart-coordinated inverters',
-      baseline: baselineMetrics.critical_load_outage_hours_controllable_nodes ?? 105.6,
-      pool: poolMetrics.critical_load_outage_hours_controllable_nodes ?? 66.4,
+      label: 'Inverter Owners (Pool Members)',
+      description: 'Households with active smart-coordinated 150Ah inverter batteries',
+      baseline: baselineMetrics.critical_load_outage_hours_controllable_nodes ?? 26.4,
+      pool: poolMetrics.critical_load_outage_hours_controllable_nodes ?? 7.4,
     },
     {
-      id: 'shops',
-      label: 'Commercial Shops',
-      description: 'Shops & clinics with critical refrigeration / POS',
-      baseline: baselineMetrics.critical_load_outage_hours_per_shop_year,
-      pool: poolMetrics.critical_load_outage_hours_per_shop_year,
+      id: 'no_inverter',
+      label: 'Non-Inverter Households',
+      description: 'Homes without backup batteries (rely on grid resilience & feeder shedding)',
+      baseline: baselineMetrics.critical_load_outage_hours_no_inverter_nodes ?? 210.6,
+      pool: poolMetrics.critical_load_outage_hours_no_inverter_nodes ?? 174.7,
     },
     {
       id: 'worst_10',
-      label: 'Worst 10% Nodes',
-      description: 'Most vulnerable nodes on feeder ends',
+      label: 'Worst 10% Vulnerable Nodes',
+      description: 'Most vulnerable connections experiencing peak gridlessness on feeder tail',
       baseline: baselineMetrics.critical_load_outage_hours_worst_10_percent,
       pool: poolMetrics.critical_load_outage_hours_worst_10_percent,
     },
@@ -151,8 +151,8 @@ export const OutageBarChart: React.FC<OutageBarChartProps> = ({
       </div>
 
       <div className="mt-4 pt-3 border-t border-slate-800/80 text-xs text-slate-400 flex items-center justify-between">
-        <span>* Critical load includes refrigeration, medical essentials, communication, and primary LED lighting.</span>
-        <span className="text-amber-400/90 font-medium">Simulated over 8,760 hours</span>
+        <span>* Critical load includes refrigeration, medical essentials, lighting, and communication.</span>
+        <span className="text-amber-400/90 font-medium">Simulated across 8,760 hours</span>
       </div>
     </div>
   );

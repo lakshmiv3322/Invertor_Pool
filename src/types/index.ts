@@ -1,5 +1,5 @@
 export type ScenarioMode = 'baseline' | 'pool';
-export type ViewTab = 'overview' | 'household' | 'operator' | 'discom';
+export type ViewTab = 'overview' | 'sensitivity' | 'ablation' | 'household' | 'operator' | 'discom';
 export type OutageScenario = 'low' | 'medium' | 'high';
 export type DRSignalType = 'encourage_charging' | 'defer_charging' | 'neutral';
 
@@ -32,6 +32,7 @@ export interface FeederSummary {
   feeder_id: string;
   substation: string;
   transformer_rating_kva: number;
+  transformer_capacity_kw?: number;
   total_households: number;
   total_shops: number;
   total_inverters: number;
@@ -53,6 +54,9 @@ export interface ScenarioMetrics {
   critical_load_outage_hours_no_inverter_nodes?: number;
   critical_load_outage_hours_worst_10_percent: number;
   evening_feeder_peak_kW: number;
+  annual_max_kW?: number;
+  battery_cycles_year?: number;
+  overload_hours_year?: number;
   unserved_energy_kWh_year: number;
   avg_24h_feeder_load_kW: number[];
   avg_24h_charging_load_kW: number[];
@@ -63,9 +67,12 @@ export interface ScenarioMetrics {
 export interface ScenarioImprovements {
   delta_outage_hours_pct: number;
   delta_ctrl_outage_pct?: number;
+  delta_noinv_outage_pct?: number;
   delta_worst_10_pct: number;
   delta_peak_pct: number;
   delta_unserved_pct: number;
+  delta_cycles_pct?: number;
+  delta_overload_hours_pct?: number;
 }
 
 export interface DiscomSignals {
@@ -118,4 +125,38 @@ export interface SimulationConfig {
   outage_scenario: OutageScenario;
   inverter_penetration: number;
   battery_capacity_ah: number;
+}
+
+export interface SensitivityRecord {
+  outage_all: [number, number];
+  outage_inv: [number, number];
+  outage_noinv: [number, number];
+  worst10: [number, number];
+  unserved_kwh: [number, number];
+  gridless_h: [number, number];
+  gridless_inv: [number, number];
+  gridless_noinv: [number, number];
+  cycles_inv: [number, number];
+  evening_peak: [number, number];
+  annual_max: [number, number];
+  overload_h: [number, number];
+  profile: number[];
+  C0: number;
+  n_inv: number;
+  n_enr: number;
+}
+
+export interface SensitivityScenario {
+  baseline: SensitivityRecord;
+  pool: SensitivityRecord;
+}
+
+export interface SensitivityData {
+  seeds: number;
+  sens: Record<string, SensitivityScenario>;
+}
+
+export interface AblationData {
+  seeds: number;
+  abl: Record<string, SensitivityScenario>;
 }
